@@ -3,6 +3,9 @@ Strict
 'original code sourced from Monkey forum posting:
 'http://www.monkey-x.com/Community/posts.php?topic=5698
 
+' Preprocessor related:
+#MOJO_AUTO_SUSPEND_ENABLED = False
+
 ' Imports:
 Import mojo
 Import brl.databuffer
@@ -116,7 +119,7 @@ Class FileApp Extends App Implements EventHandler
 		SetUpdateRate(30) ' 0 ' 60
 		
 		Self.running = False
-		Self.filesLoaded = 0
+		Self.filesQueued = 0
 		
 		' This is a dummy object used to get around the limitations of DOM:
 		Self.repeater = New EventRepeater(Self)
@@ -131,7 +134,7 @@ Class FileApp Extends App Implements EventHandler
 		Next
 		
 		#If CONFIG = "debug"
-			MakerunButton()
+			MakeRunButton()
 		#End
 		
 		Return 0
@@ -152,13 +155,9 @@ Class FileApp Extends App Implements EventHandler
 					
 					LoadFile(f, buffer)
 					
-					files[filesLoaded] = buffer
+					files[filesQueued] = buffer
 					
-					filesLoaded += 1
-					
-					If (AllFilesLoaded) Then
-						OnfilesLoaded()
-					Endif
+					filesQueued += 1
 				Endif
 			Case "click"
 				If (event.target = runButton) Then
@@ -171,10 +170,14 @@ Class FileApp Extends App Implements EventHandler
 		Return 1
 	End
 	
-	Method OnfilesLoaded:Void()
+	Method OnFilesLoaded:Void()
+		If (runButton <> Null) Then
+			Return
+		Endif
+		
 		'running = True
 		
-		MakerunButton()
+		MakeRunButton()
 		
 		Print("All files have been loaded.")
 		
@@ -193,7 +196,7 @@ Class FileApp Extends App Implements EventHandler
 		Return
 	End
 	
-	Method MakerunButton:Void()
+	Method MakeRunButton:Void()
 		If (runButton <> Null) Then
 			Return
 		Endif
@@ -215,10 +218,20 @@ Class FileApp Extends App Implements EventHandler
 	
 	Method OnUpdate:Int()
 		If (Not running) Then
+			If (AllFilesLoaded) Then
+				OnFilesLoaded()
+			Endif
+			
 			Return 0
 		Endif
 		
-		Print("The application is running.")
+		If (MouseHit(MOUSE_LEFT)) Then
+			For Local I:= 0 Until files.Length
+				Print("File #" + (I+1) + ":")
+				Print("")
+				Print(files[I].PeekString(0))
+			Next
+		Endif
 		
 		Return 0
 	End
@@ -227,19 +240,24 @@ Class FileApp Extends App Implements EventHandler
 		Cls()
 		
 		If (Not running) Then
-			DrawText("Files loaded: " + filesLoaded, 8.0, 8.0)
+			If (AllFilesLoaded) Then
+				DrawText("All files have been loaded.", 8.0, 8.0)
+			Else
+				' This basically never happens.
+				DrawText("Waiting for files; " + FilesCompleted + " completed.", 8.0, 8.0)
+			Endif
 			
 			Return 0
 		Endif
 		
-		DrawText("All files have been loaded.", 8.0, 8.0)
+		DrawText("Running as expected, click on the screen to output all files as plain text.", 8.0, 8.0)
 		
 		Return 0
 	End
 	
 	' Properties:
 	Method AllFilesLoaded:Bool() Property
-		Return ((filesLoaded = FILES_NEEDED) And FileBuffersLoaded)
+		Return ((filesQueued = FILES_NEEDED) And FileBuffersLoaded)
 	End
 	
 	Method FileBuffersLoaded:Bool() Property
@@ -252,13 +270,27 @@ Class FileApp Extends App Implements EventHandler
 		Return True
 	End
 	
+	Method FilesCompleted:Int() Property
+		Local count:= 0
+		
+		For Local I:= 0 Until files.Length
+			Local file:= files[I]
+			
+			If (file <> Null And file.Length <> 0) Then
+				count += 1
+			Endif
+		Next
+		
+		Return count
+	End
+	
 	' Fields:
 	Field fileButtons:HTMLFileInputElement[]
 	Field runButton:HTMLInputElement
 	
 	Field files:DataBuffer[]
 	
-	Field filesLoaded:Int
+	Field filesQueued:Int
 	Field repeater:EventRepeater
 	
 	Field bodyNode:dom.Node
