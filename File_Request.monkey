@@ -5,15 +5,23 @@ Strict
 
 ' Imports:
 Import mojo
+Import brl.databuffer
 
 ' Check if we're using HTML5:
 #If TARGET = "html5"
 	Import dom
 	
+	Import "native/file_to_databuffer.js"
+	
 	' External bindings (JavaScript):
 	Extern
 	
 	' Functions:
+	
+	' File-to-DataBuffer:
+	Function LoadFile:DataBuffer(F:File, B_Out:DataBuffer)="loadFile"
+	
+	' DOM:
 	Function log:Void(e:Event) = "window.console.log"
 	Function log:Void(f:FileList) = "window.console.log"
 	Function log:Void(f:File) = "window.console.log"
@@ -116,6 +124,7 @@ Class FileApp Extends App Implements EventHandler
 		Self.bodyNode = dom.Node(Element(document.getElementsByTagName("body").item(0)).getElementsByTagName("div").item(0))
 		
 		Self.fileButtons = New HTMLFileInputElement[FILES_NEEDED]
+		Self.files = New DataBuffer[FILES_NEEDED] ' Self.fileButtons.Length
 		
 		For Local I:= 0 Until fileButtons.Length ' FILES_NEEDED
 			Self.fileButtons[I] = AddFileRequester(repeater, bodyNode)
@@ -138,9 +147,16 @@ Class FileApp Extends App Implements EventHandler
 					
 					Print("New file: ~q" + f.name + "~q - " + f.size + " bytes")
 					
+					' Allocate a "shell" object.
+					Local buffer:= New DataBuffer()
+					
+					LoadFile(f, buffer)
+					
+					files[filesLoaded] = buffer
+					
 					filesLoaded += 1
 					
-					If (AllfilesLoaded) Then
+					If (AllFilesLoaded) Then
 						OnfilesLoaded()
 					Endif
 				Endif
@@ -148,7 +164,7 @@ Class FileApp Extends App Implements EventHandler
 				If (event.target = runButton) Then
 					'Local runButton:= Self.runButton
 					
-					OnrunButtonPressed()
+					OnRunButtonPressed()
 				Endif
 		End Select
 		
@@ -165,8 +181,8 @@ Class FileApp Extends App Implements EventHandler
 		Return
 	End
 	
-	Method OnrunButtonPressed:Void()
-		If (running Or Not AllfilesLoaded) Then
+	Method OnRunButtonPressed:Void()
+		If (running Or Not AllFilesLoaded) Then
 			Return
 		Endif
 		
@@ -222,13 +238,25 @@ Class FileApp Extends App Implements EventHandler
 	End
 	
 	' Properties:
-	Method AllfilesLoaded:Bool() Property
-		Return (filesLoaded = FILES_NEEDED)
+	Method AllFilesLoaded:Bool() Property
+		Return ((filesLoaded = FILES_NEEDED) And FileBuffersLoaded)
+	End
+	
+	Method FileBuffersLoaded:Bool() Property
+		For Local I:= 0 Until files.Length
+			If (files[I].Length = 0) Then
+				Return False
+			Endif
+		Next
+		
+		Return True
 	End
 	
 	' Fields:
 	Field fileButtons:HTMLFileInputElement[]
 	Field runButton:HTMLInputElement
+	
+	Field files:DataBuffer[]
 	
 	Field filesLoaded:Int
 	Field repeater:EventRepeater
