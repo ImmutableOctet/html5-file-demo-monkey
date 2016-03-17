@@ -109,7 +109,7 @@ End
 ' Classes:
 Class FileApp Extends App Implements EventHandler
 	' Constant variable(s):
-	Const FILES_NEEDED:= 1
+	Const FILES_NEEDED:= 3
 	
 	' Methods:
 	Method OnCreate:Int()
@@ -248,6 +248,7 @@ Class FileApp Extends App Implements EventHandler
 			Local buffer:= files[I]
 			Local inputStream:= New DataStream(buffer)
 			
+			Print("")
 			Print("Parsing file #" + (I+1) + ":")
 			Print("")
 			
