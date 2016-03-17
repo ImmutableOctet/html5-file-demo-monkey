@@ -1,14 +1,13 @@
 Strict
 
-'original code sourced from Monkey forum posting:
-'http://www.monkey-x.com/Community/posts.php?topic=5698
-
 ' Preprocessor related:
 #MOJO_AUTO_SUSPEND_ENABLED = False
 
 ' Imports:
 Import mojo
+
 Import brl.databuffer
+Import brl.datastream
 
 ' Check if we're using HTML5:
 #If TARGET = "html5"
@@ -55,9 +54,7 @@ Import brl.databuffer
 		Field files:FileList
 	End
 	
-	Public
-	
-	' HTML5-specific Monkey code:
+	Public	
 	
 	' Classes:
 	Class EventRepeater Extends EventListener
@@ -145,17 +142,12 @@ Class FileApp Extends App Implements EventHandler
 			Case "change"
 				Local fileButton:= GetFileButton(event.target)
 				
-				If (fileButton <> Null) Then
+				If (fileButton <> Null And files.Length > filesQueued) Then
 					Local f:File = fileButton.files.item(0)
 					
 					Print("New file: ~q" + f.name + "~q - " + f.size + " bytes")
 					
-					' Allocate a "shell" object.
-					Local buffer:= New DataBuffer()
-					
-					LoadFile(f, buffer)
-					
-					files[filesQueued] = buffer
+					files[filesQueued] = LoadFile(f, DataBuffer())
 					
 					filesQueued += 1
 				Endif
@@ -226,11 +218,7 @@ Class FileApp Extends App Implements EventHandler
 		Endif
 		
 		If (MouseHit(MOUSE_LEFT)) Then
-			For Local I:= 0 Until files.Length
-				Print("File #" + (I+1) + ":")
-				Print("")
-				Print(files[I].PeekString(0))
-			Next
+			ReadLoadedFiles()
 		Endif
 		
 		Return 0
@@ -253,6 +241,33 @@ Class FileApp Extends App Implements EventHandler
 		DrawText("Running as expected, click on the screen to output all files as plain text.", 8.0, 8.0)
 		
 		Return 0
+	End
+	
+	Method ReadLoadedFiles:Void()
+		For Local I:= 0 Until files.Length
+			Local buffer:= files[I]
+			Local inputStream:= New DataStream(buffer)
+			
+			Print("Parsing file #" + (I+1) + ":")
+			Print("")
+			
+			While (Not inputStream.Eof())
+				' Read the current line.
+				Local line:= inputStream.ReadLine()
+				
+				Print("Line: " + line)
+			Wend
+			
+			inputStream.Close()
+			
+			Print(files[I].PeekString(0))
+		Next
+		
+		Print(" ")
+		Print("========== End of parsing files===========")
+		Print(" ")
+		
+		Return
 	End
 	
 	' Properties:
