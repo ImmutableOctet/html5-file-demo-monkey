@@ -147,7 +147,7 @@ Class FileApp Extends App Implements EventHandler
 					
 					Print("New file: ~q" + f.name + "~q - " + f.size + " bytes")
 					
-					files[filesQueued] = LoadFile(f, DataBuffer())
+					files[filesQueued] = LoadFile(f, New DataBuffer())
 					
 					filesQueued += 1
 				Endif
