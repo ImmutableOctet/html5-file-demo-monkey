@@ -277,7 +277,9 @@ Class FileApp Extends App Implements EventHandler
 	
 	Method FileBuffersLoaded:Bool() Property
 		For Local I:= 0 Until files.Length
-			If (files[I].Length = 0) Then
+			Local file:= files[I]
+			
+			If (file <> Null And file.Length = 0) Then
 				Return False
 			Endif
 		Next
