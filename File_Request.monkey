@@ -109,7 +109,7 @@ End
 ' Classes:
 Class FileApp Extends App Implements EventHandler
 	' Constant variable(s):
-	Const FILES_NEEDED:= 3
+	Const FILES_NEEDED:= 1
 	
 	' Methods:
 	Method OnCreate:Int()
@@ -259,8 +259,6 @@ Class FileApp Extends App Implements EventHandler
 			Wend
 			
 			inputStream.Close()
-			
-			Print(files[I].PeekString(0))
 		Next
 		
 		Print(" ")

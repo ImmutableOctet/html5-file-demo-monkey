@@ -15,4 +15,6 @@ function loadFile(file, buf)
 	}
 
 	reader.readAsArrayBuffer(file);
+	
+	return buf
 }
